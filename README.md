@@ -12,7 +12,7 @@ vehicle state, remote commands, events. Built on Guzzle, no manual cURL.
 ## Installation
 
 ```bash
-composer require cruide/starline-api
+composer require cruide/starline-openapi-laravel
 php artisan vendor:publish --tag=starline-config
 ```
 
