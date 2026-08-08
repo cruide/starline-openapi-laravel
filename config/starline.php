@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @author Alexander Tischenko <http://alex-tisch.ru>
+ */
+
 return [
 
     /*
@@ -7,7 +11,7 @@ return [
     | Application credentials
     |--------------------------------------------------------------------------
     | Register an application at https://my.starline.ru/developer to obtain
-    | the App ID and Secret Key.
+    | the App ID and Secret Key. Both are required.
     */
 
     'app_id' => env('STARLINE_APP_ID'),

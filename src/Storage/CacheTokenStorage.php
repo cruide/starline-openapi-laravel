@@ -5,6 +5,8 @@ use Illuminate\Contracts\Cache\Repository;
 /**
  * Stores SLID tokens in the Laravel cache so the full auth chain
  * is not repeated on every request.
+ *
+ * @author Alexander Tischenko <http://alex-tisch.ru>
  */
 class CacheTokenStorage
 {

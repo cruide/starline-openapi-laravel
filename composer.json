@@ -4,9 +4,16 @@
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "starline", "api", "slid", "telematics"],
+    "authors": [
+        {
+            "name": "Alexander Tischenko",
+            "homepage": "http://alex-tisch.ru"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "guzzlehttp/guzzle": "^7.8",
+        "illuminate/cache": "^12.0",
         "illuminate/support": "^12.0"
     },
     "require-dev": {

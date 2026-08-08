@@ -1,7 +1,7 @@
 <?php namespace StarlineApi;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\CookieJar\CookieJar;
+use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface;
 use StarlineApi\Exceptions\StarlineApiException;
@@ -20,6 +20,7 @@ use StarlineApi\Storage\CacheTokenStorage;
  *
  * All data requests are authenticated with the "slnet" cookie.
  *
+ * @author Alexander Tischenko <http://alex-tisch.ru>
  * @see https://developer.starline.ru/
  */
 class StarlineClient

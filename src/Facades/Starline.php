@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Facade;
 use StarlineApi\StarlineClient;
 
 /**
+ * @author Alexander Tischenko <http://alex-tisch.ru>
+ *
  * @method static string authenticate(bool $force = false)
  * @method static int userId()
  * @method static array userInfo()

@@ -6,10 +6,16 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use Orchestra\Testbench\TestCase;
+use StarlineApi\Exceptions\StarlineApiException;
+use StarlineApi\Exceptions\StarlineAuthException;
+use StarlineApi\Exceptions\StarlineException;
 use StarlineApi\StarlineClient;
 use StarlineApi\StarlineServiceProvider;
 use StarlineApi\Storage\CacheTokenStorage;
 
+/**
+ * @author Alexander Tischenko <http://alex-tisch.ru>
+ */
 class StarlineClientTest extends TestCase
 {
     /** @var array<int, array{request: \Psr\Http\Message\RequestInterface}> */
@@ -94,7 +100,7 @@ class StarlineClientTest extends TestCase
         $this->assertCount(6, $this->history);
     }
 
-    public function test_set_param_posts_json(): void
+    public function test_disarm(): void
     {
         $storage = $this->storage();
         $storage->set('slnet', 'SL');
@@ -104,10 +110,101 @@ class StarlineClientTest extends TestCase
             new Response(200, [], (string) json_encode(['code' => 200, 'desc' => ['state' => 1]])),
         ], $storage);
 
-        $client->arm(7);
+        $client->disarm(7);
 
         $request = $this->history[0]['request'];
         $this->assertStringEndsWith('/json/v1/device/7/set_param', $request->getUri()->getPath());
-        $this->assertSame(['security' => ['arm' => true]], json_decode((string) $request->getBody(), true));
+        $this->assertSame(['security' => ['arm' => false]], json_decode((string) $request->getBody(), true));
+    }
+
+    public function test_stop_engine(): void
+    {
+        $storage = $this->storage();
+        $storage->set('slnet', 'SL');
+        $storage->set('user_id', '7');
+
+        $client = $this->client([
+            new Response(200, [], (string) json_encode(['code' => 200, 'desc' => ['state' => 1]])),
+        ], $storage);
+
+        $client->stopEngine(7);
+
+        $request = $this->history[0]['request'];
+        $this->assertStringEndsWith('/json/v1/device/7/set_param', $request->getUri()->getPath());
+        $this->assertSame(['engine' => ['stop' => true]], json_decode((string) $request->getBody(), true));
+    }
+
+    public function test_raw_get(): void
+    {
+        $storage = $this->storage();
+        $storage->set('slnet', 'SL');
+        $storage->set('user_id', '7');
+
+        $client = $this->client([
+            new Response(200, [], (string) json_encode(['code' => 200, 'desc' => ['data' => 'value']])),
+        ], $storage);
+
+        $result = $client->get('/json/v1/custom', ['key' => 'val']);
+
+        $this->assertSame(['data' => 'value'], $result);
+
+        $request = $this->history[0]['request'];
+        $this->assertStringEndsWith('/json/v1/custom', $request->getUri()->getPath());
+        $this->assertStringContainsString('key=val', (string) $request->getUri()->getQuery());
+    }
+
+    public function test_user_id_from_slid_token_fallback(): void
+    {
+        $storage = $this->storage();
+        $storage->set('slnet', 'SL');
+        $storage->set('slid_token', 'hash:99');
+
+        $client = $this->client([], $storage);
+
+        $this->assertSame(99, $client->userId());
+    }
+
+    public function test_api_exception_on_error_envelope(): void
+    {
+        $storage = $this->storage();
+        $storage->set('slnet', 'SL');
+        $storage->set('user_id', '7');
+
+        $client = $this->client([
+            new Response(500, [], (string) json_encode(['code' => 500, 'codestring' => 'Internal Error'])),
+        ], $storage);
+
+        $this->expectException(StarlineApiException::class);
+        $client->deviceData(7);
+    }
+
+    public function test_auth_exception_on_bad_credentials(): void
+    {
+        $this->expectException(StarlineAuthException::class);
+
+        $this->client([
+            new Response(200, [], (string) json_encode(['state' => 0, 'desc' => ['message' => 'Bad credentials']])),
+        ])->userInfo();
+    }
+
+    public function test_missing_config_throws_exception(): void
+    {
+        $this->expectException(StarlineException::class);
+
+        new StarlineClient(
+            ['app_id' => '', 'app_secret' => '', 'login' => '', 'password' => '', 'id_url' => '', 'api_url' => ''],
+            $this->storage(),
+        );
+    }
+
+    public function test_authenticate_returns_cached_token(): void
+    {
+        $storage = $this->storage();
+        $storage->set('slnet', 'CACHED_SLNET');
+
+        $client = $this->client([], $storage);
+
+        $this->assertSame('CACHED_SLNET', $client->authenticate());
+        $this->assertCount(0, $this->history);
     }
 }

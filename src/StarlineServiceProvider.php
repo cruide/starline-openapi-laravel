@@ -4,6 +4,9 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use StarlineApi\Storage\CacheTokenStorage;
 
+/**
+ * @author Alexander Tischenko <http://alex-tisch.ru>
+ */
 class StarlineServiceProvider extends ServiceProvider
 {
     public function register(): void

@@ -2,6 +2,8 @@
 
 /**
  * Thrown when the StarLine API returns an error envelope or HTTP >= 400.
+ *
+ * @author Alexander Tischenko <http://alex-tisch.ru>
  */
 class StarlineApiException extends StarlineException
 {

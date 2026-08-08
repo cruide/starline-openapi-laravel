@@ -1,4 +1,6 @@
-# StarlineApi for Laravel (by Alexander Tischenko)
+# StarlineApi for Laravel
+
+Разработчик: [Alexander Tischenko](http://alex-tisch.ru).
 
 A compact Laravel client for the [StarLine OpenAPI](https://developer.starline.ru/) —
 vehicle state, remote commands, events. Built on Guzzle, no manual cURL.
@@ -19,12 +21,12 @@ php artisan vendor:publish --tag=starline-config
 Add credentials to `.env`:
 
 ```dotenv
-# STARLINE_APP_ID=123456
+STARLINE_APP_ID=123456
 STARLINE_APP_SECRET=your-app-secret
 STARLINE_LOGIN=user@example.com
 STARLINE_PASSWORD=secret
 # Optional
-## STARLINE_USER_ID=
+# STARLINE_USER_ID=
 # STARLINE_CACHE_STORE=
 # STARLINE_CACHE_TTL=86400
 ```
