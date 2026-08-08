@@ -1,4 +1,4 @@
-# StarlineApi for Laravel
+# Starline OpenApi for Laravel
 
 Разработчик: [Alexander Tischenko](http://alex-tisch.ru).
 
