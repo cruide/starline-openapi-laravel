@@ -1,4 +1,4 @@
-# StarlineApi for Laravel
+# StarlineApi for Laravel (by Alexander Tischenko)
 
 A compact Laravel client for the [StarLine OpenAPI](https://developer.starline.ru/) —
 vehicle state, remote commands, events. Built on Guzzle, no manual cURL.
