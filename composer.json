@@ -1,0 +1,38 @@
+{
+    "name": "kengois/starline-api",
+    "description": "Laravel client for the StarLine OpenAPI (SLID auth, device state & remote control)",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["laravel", "starline", "api", "slid", "telematics"],
+    "require": {
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.8",
+        "illuminate/support": "^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "StarlineApi\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "StarlineApi\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "StarlineApi\\StarlineServiceProvider"
+            ],
+            "aliases": {
+                "Starline": "StarlineApi\\Facades\\Starline"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
