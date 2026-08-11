@@ -1,10 +1,7 @@
 <?php namespace StarlineApi\Exceptions;
 
-/**
- * Base exception of the StarlineApi package.
- *
- * @author Alexander Tischenko <http://alex-tisch.ru>
- */
-class StarlineException extends \RuntimeException
+use Cruide\StarlineApi\Exceptions\StarlineException as BaseException;
+
+class StarlineException extends BaseException
 {
 }

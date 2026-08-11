@@ -4,21 +4,18 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use StarlineApi\Storage\CacheTokenStorage;
 
-/**
- * @author Alexander Tischenko <http://alex-tisch.ru>
- */
 class StarlineServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/starline.php', 'starline');
+        $this->mergeConfigFrom(__DIR__ . '/../config/starline.php', 'starline');
 
         $this->app->singleton(CacheTokenStorage::class, function (Application $app): CacheTokenStorage {
             $cache = $app['config']['starline.cache'];
 
             return new CacheTokenStorage(
                 $app['cache']->store($cache['store'] ?? null),
-                (string) ($cache['prefix'] ?? 'starline'),
+                (string) ($cache['prefix'] ?? ''),
                 (int) ($cache['ttl'] ?? 86400),
             );
         });
@@ -35,7 +32,7 @@ class StarlineServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../config/starline.php' => config_path('starline.php'),
+                __DIR__ . '/../config/starline.php' => config_path('starline.php'),
             ], 'starline-config');
         }
     }

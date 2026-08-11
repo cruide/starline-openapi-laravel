@@ -1,18 +1,13 @@
 <?php namespace StarlineApi\Storage;
 
+use Cruide\StarlineApi\Auth\TokenStorageInterface;
 use Illuminate\Contracts\Cache\Repository;
 
-/**
- * Stores SLID tokens in the Laravel cache so the full auth chain
- * is not repeated on every request.
- *
- * @author Alexander Tischenko <http://alex-tisch.ru>
- */
-class CacheTokenStorage
+class CacheTokenStorage implements TokenStorageInterface
 {
     public function __construct(
         private readonly Repository $cache,
-        private readonly string $prefix = 'starline',
+        private readonly string $prefix = '',
         private readonly int $ttl = 86400,
     ) {
     }
@@ -29,21 +24,20 @@ class CacheTokenStorage
         $this->cache->put($this->key($key), $value, $ttl ?? $this->ttl);
     }
 
-    public function forget(string $key): void
+    public function delete(string $key): void
     {
         $this->cache->forget($this->key($key));
     }
 
-    /** Remove every token stored by this package. */
     public function flush(): void
     {
-        foreach (['app_token', 'slid_token', 'user_id', 'slnet'] as $key) {
-            $this->forget($key);
+        foreach (['starline.app_token', 'starline.user_token', 'starline.slnet', 'starline.user_id'] as $key) {
+            $this->delete($key);
         }
     }
 
     private function key(string $key): string
     {
-        return $this->prefix.'.'.$key;
+        return $this->prefix !== '' ? $this->prefix . '.' . $key : $key;
     }
 }

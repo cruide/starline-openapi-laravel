@@ -10,8 +10,15 @@
             "homepage": "http://alex-tisch.ru"
         }
     ],
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../starline-openapi-php"
+        }
+    ],
     "require": {
         "php": "^8.2",
+        "cruide/starline-openapi-php": "@dev",
         "guzzlehttp/guzzle": "^7.8",
         "illuminate/cache": "^12.0",
         "illuminate/support": "^12.0"
@@ -40,6 +47,6 @@
             }
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true
 }

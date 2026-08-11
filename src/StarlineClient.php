@@ -1,344 +1,112 @@
 <?php namespace StarlineApi;
 
+use Cruide\StarlineApi\Api\DeviceApi;
+use Cruide\StarlineApi\Api\UserApi;
+use Cruide\StarlineApi\Auth\Authenticator;
+use Cruide\StarlineApi\Auth\OcrInterface;
+use Cruide\StarlineApi\StarlineApi as BaseStarlineApi;
 use GuzzleHttp\Client;
-use GuzzleHttp\Cookie\CookieJar;
-use GuzzleHttp\Exception\GuzzleException;
-use Psr\Http\Message\ResponseInterface;
-use StarlineApi\Exceptions\StarlineApiException;
-use StarlineApi\Exceptions\StarlineAuthException;
 use StarlineApi\Exceptions\StarlineException;
+use StarlineApi\Http\GuzzleHttpClient;
 use StarlineApi\Storage\CacheTokenStorage;
 
-/**
- * StarLine OpenAPI client.
- *
- * Implements the SLID auth flow:
- *   1. GET  {id}/apiV3/application/getCode   secret = md5(appSecret)
- *   2. GET  {id}/apiV3/application/getToken  secret = md5(appSecret + code)
- *   3. POST {id}/apiV3/user/login            pass = sha1(password), Bearer appToken
- *   4. POST {api}/json/v2/auth.slid          form: slid + appId -> cookie "slnet"
- *
- * All data requests are authenticated with the "slnet" cookie.
- *
- * @author Alexander Tischenko <http://alex-tisch.ru>
- * @see https://developer.starline.ru/
- */
 class StarlineClient
 {
-    private const ID_HOST_KEYS = ['app_id', 'app_secret', 'login', 'password', 'id_url', 'api_url'];
+    private BaseStarlineApi $api;
 
-    private readonly Client $http;
+    private const REQUIRED_KEYS = ['app_id', 'app_secret', 'login', 'password'];
 
-    /**
-     * @param array<string, mixed> $config Merged "starline" config.
-     */
-    public function __construct(
-        private readonly array $config,
-        private readonly CacheTokenStorage $storage,
-        ?Client $http = null,
-    ) {
-        foreach (self::ID_HOST_KEYS as $key) {
-            if (empty($this->config[$key])) {
+    public function __construct(array $config, CacheTokenStorage $storage, ?Client $httpClient = null)
+    {
+        foreach (self::REQUIRED_KEYS as $key) {
+            if (empty($config[$key])) {
                 throw new StarlineException("Starline config key [{$key}] is missing.");
             }
         }
 
-        $this->http = $http ?? new Client([
-            'timeout' => (int) ($config['timeout'] ?? 30),
-            'http_errors' => false,
-            'headers' => ['User-Agent' => 'starline-api-laravel/1.0'],
-        ]);
-    }
+        $http = new GuzzleHttpClient((int) ($config['timeout'] ?? 30), $httpClient);
 
-    /*
-    |--------------------------------------------------------------------
-    | Public API
-    |--------------------------------------------------------------------
-    */
+        $this->api = new BaseStarlineApi(
+            $config['app_id'],
+            $config['app_secret'],
+            $config['login'],
+            $config['password'],
+            $http,
+            $storage
+        );
 
-    /** Run the full SLID chain (or reuse cached tokens). Returns slnet. */
-    public function authenticate(bool $force = false): string
-    {
-        if (! $force && $slnet = $this->storage->get('slnet')) {
-            return $slnet;
+        if (! empty($config['user_id'])) {
+            $this->api->setUserId((int) $config['user_id']);
         }
-
-        $appToken = $this->appToken($force);
-        $slid = $this->slidToken($appToken, $force);
-        $slnet = $this->exchangeSlid($slid);
-
-        $this->storage->set('slnet', $slnet);
-
-        return $slnet;
     }
 
-    /** Current user id (auto-detected during login, cached). */
-    public function userId(): int
+    public function user(): UserApi
     {
-        foreach ([$this->config['user_id'] ?? null, $this->storage->get('user_id')] as $id) {
-            if ($id !== null && ctype_digit((string) $id)) {
-                return (int) $id;
-            }
-        }
-
-        $this->authenticate();
-
-        if ($id = $this->storage->get('user_id')) {
-            return (int) $id;
-        }
-
-        // Fallback: the SLID token has the "<hash>:<user_id>" format.
-        $slid = (string) $this->storage->get('slid_token');
-
-        if (str_contains($slid, ':') && ctype_digit($suffix = substr($slid, strrpos($slid, ':') + 1))) {
-            $this->storage->set('user_id', $suffix);
-
-            return (int) $suffix;
-        }
-
-        throw new StarlineAuthException('Unable to detect user_id. Set STARLINE_USER_ID.');
+        return $this->api->user();
     }
 
-    /** User profile + device list. GET /json/v1/user/{id}/user_info */
-    public function userInfo(): array
+    public function devices(): DeviceApi
     {
-        return $this->get(sprintf('/json/v1/user/%d/user_info', $this->userId()));
+        return $this->api->devices();
     }
 
-    /** Live device state. GET /json/v3/device/{id}/data */
-    public function deviceData(int|string $deviceId): array
+    public function authenticator(): Authenticator
     {
-        return $this->get(sprintf('/json/v3/device/%s/data', $deviceId));
+        return $this->api->authenticator();
     }
 
-    /** Send a command. POST /json/v1/device/{id}/set_param */
-    public function setParam(int|string $deviceId, array $params): array
+    public function authenticate(bool $force = false): void
     {
-        return $this->post(sprintf('/json/v1/device/%s/set_param', $deviceId), $params);
+        $this->api->authenticate($force);
     }
 
-    public function arm(int|string $deviceId): array
+    public function authenticateWithSlidToken(string $slidToken): void
     {
-        return $this->setParam($deviceId, ['security' => ['arm' => true]]);
+        $this->api->authenticateWithSlidToken($slidToken);
     }
 
-    public function disarm(int|string $deviceId): array
+    public function authenticateWithCaptcha(string $captchaSid, string $captchaCode): void
     {
-        return $this->setParam($deviceId, ['security' => ['arm' => false]]);
+        $this->api->authenticateWithCaptcha($captchaSid, $captchaCode);
     }
 
-    public function startEngine(int|string $deviceId): array
+    public function authenticateWithSms(string $smsCode): void
     {
-        return $this->setParam($deviceId, ['engine' => ['start' => true]]);
+        $this->api->authenticateWithSms($smsCode);
     }
 
-    public function stopEngine(int|string $deviceId): array
+    public function authenticateWithCaptchaAuto(OcrInterface $ocr): void
     {
-        return $this->setParam($deviceId, ['engine' => ['stop' => true]]);
+        $this->api->authenticateWithCaptchaAuto($ocr);
     }
 
-    /** Raw GET against the API host (auto re-auth on 401). */
+    public function setUserId(int $userId): void
+    {
+        $this->api->setUserId($userId);
+    }
+
+    public function setOcr(OcrInterface $ocr): void
+    {
+        $this->api->setOcr($ocr);
+    }
+
     public function get(string $path, array $query = []): array
     {
-        return $this->request('GET', $path, ['query' => $query]);
+        return $this->api->get($path, $query);
     }
 
-    /** Raw POST against the API host (auto re-auth on 401). */
     public function post(string $path, array $json = []): array
     {
-        return $this->request('POST', $path, ['json' => $json]);
+        return $this->api->post($path, $json);
     }
 
-    /*
-    |--------------------------------------------------------------------
-    | Auth chain
-    |--------------------------------------------------------------------
-    */
-
-    /** Steps 1-2: one-time app code, then the application token. */
-    private function appToken(bool $force): string
+    public function request(string $method, string $path, array $query = [], ?array $json = null): array
     {
-        if (! $force && $token = $this->storage->get('app_token')) {
-            return $token;
-        }
-
-        $secret = (string) $this->config['app_secret'];
-
-        $code = $this->idGet('/apiV3/application/getCode', [
-            'appId' => $this->config['app_id'],
-            'secret' => md5($secret),
-        ])['code'];
-
-        $token = $this->idGet('/apiV3/application/getToken', [
-            'appId' => $this->config['app_id'],
-            'secret' => md5($secret.$code),
-        ])['token'];
-
-        $this->storage->set('app_token', $token);
-
-        return $token;
+        return $this->api->request($method, $path, $query, $json);
     }
 
-    /** Step 3: user login; password is SHA-1 hashed client-side. */
-    private function slidToken(string $appToken, bool $force): string
+    public function api(): BaseStarlineApi
     {
-        if (! $force && $token = $this->storage->get('slid_token')) {
-            return $token;
-        }
-
-        $desc = $this->idRequest('POST', '/apiV3/user/login', [
-            'headers' => ['Authorization' => 'Bearer '.$appToken],
-            'form_params' => [
-                'login' => $this->config['login'],
-                'pass' => sha1((string) $this->config['password']),
-            ],
-        ]);
-
-        $userId = $desc['user_id'] ?? $desc['userId'] ?? null;
-
-        if ($userId !== null) {
-            $this->storage->set('user_id', (string) $userId);
-        }
-
-        $this->storage->set('slid_token', $token = (string) $desc['user_token']);
-
-        return $token;
-    }
-
-    /** Step 4: exchange the SLID token for the "slnet" session cookie. */
-    private function exchangeSlid(string $slid): string
-    {
-        $jar = new CookieJar();
-
-        $response = $this->http->post($this->config['api_url'].'/json/v2/auth.slid', [
-            'cookies' => $jar,
-            'form_params' => [
-                'slid' => $slid,
-                'appId' => $this->config['app_id'],
-            ],
-        ]);
-
-        foreach ($jar->toArray() as $cookie) {
-            if ($cookie['Name'] === 'slnet' && $cookie['Value'] !== '') {
-                return (string) $cookie['Value'];
-            }
-        }
-
-        throw new StarlineAuthException(
-            'auth.slid did not return the "slnet" cookie (HTTP '.$response->getStatusCode().').',
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------
-    | HTTP layer
-    |--------------------------------------------------------------------
-    */
-
-    /**
-     * Authenticated request with a single automatic re-auth retry on 401.
-     *
-     * @param array<string, mixed> $options
-     * @return array<string, mixed> The "desc" part of the response.
-     */
-    private function request(string $method, string $path, array $options, bool $retry = true): array
-    {
-        $response = $this->send(
-            $method,
-            $this->config['api_url'].'/'.ltrim($path, '/'),
-            $options + ['headers' => ['Cookie' => 'slnet='.$this->authenticate()]],
-        );
-
-        if ($response->getStatusCode() === 401 && $retry) {
-            $this->storage->flush();
-
-            return $this->request($method, $path, $options, false);
-        }
-
-        return $this->unwrap($response);
-    }
-
-    /** GET against id.starline.ru; returns the "desc" envelope. */
-    private function idGet(string $path, array $query): array
-    {
-        return $this->idRequest('GET', $path, ['query' => $query]);
-    }
-
-    /**
-     * Request against id.starline.ru with the {"state":1,"desc":{...}} envelope.
-     *
-     * @param array<string, mixed> $options
-     * @return array<string, mixed>
-     */
-    private function idRequest(string $method, string $path, array $options): array
-    {
-        $response = $this->send($method, $this->config['id_url'].$path, $options);
-        $data = $this->decode($response);
-
-        if (($data['state'] ?? null) !== 1) {
-            throw new StarlineAuthException(sprintf(
-                '%s failed: %s',
-                $path,
-                $data['desc']['message'] ?? 'unknown error (HTTP '.$response->getStatusCode().')',
-            ));
-        }
-
-        return $data['desc'] ?? [];
-    }
-
-    /**
-     * Unwrap the developer.starline.ru envelope: {"code":200,"codestring":"OK",...}.
-     *
-     * @return array<string, mixed>
-     */
-    private function unwrap(ResponseInterface $response): array
-    {
-        $status = $response->getStatusCode();
-
-        if ($status === 401 || $status === 403) {
-            throw new StarlineAuthException('Unauthorized (HTTP '.$status.').');
-        }
-
-        $data = $this->decode($response);
-        $code = isset($data['code']) ? (int) $data['code'] : $status;
-
-        if ($status >= 400 || $code >= 400) {
-            throw new StarlineApiException(
-                sprintf('[%d] %s', $code, $data['codestring'] ?? 'API error'),
-                $code,
-                $data,
-            );
-        }
-
-        return $data['desc'] ?? $data;
-    }
-
-    private function send(string $method, string $url, array $options): ResponseInterface
-    {
-        try {
-            return $this->http->request($method, $url, $options);
-        } catch (GuzzleException $e) {
-            throw new StarlineApiException('HTTP request failed: '.$e->getMessage(), previous: $e);
-        }
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function decode(ResponseInterface $response): array
-    {
-        $body = (string) $response->getBody();
-
-        if ($body === '') {
-            return [];
-        }
-
-        $data = json_decode($body, true);
-
-        if (! is_array($data)) {
-            throw new StarlineApiException('Invalid JSON response: '.mb_substr($body, 0, 200));
-        }
-
-        return $data;
+        return $this->api;
     }
 }
