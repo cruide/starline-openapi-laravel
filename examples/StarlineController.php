@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Пример использования StarLine API через Dependency Injection в Laravel.
+ * Пример использования StarLine API через Dependency Injection.
  *
  * @author Alexander Tischenko (http://alex-tisch.ru)
  */
@@ -10,17 +10,14 @@ namespace App\Http\Controllers;
 
 use Cruide\StarlineApi\Exceptions\StarlineApiException;
 use Cruide\StarlineApi\Exceptions\StarlineAuthException;
-use StarlineApi\StarlineClient;
+use Cruide\StarlineLaravel\Client;
 
 class StarlineController
 {
-    public function __construct(private StarlineClient $starline)
+    public function __construct(private Client $starline)
     {
     }
 
-    /**
-     * Список устройств и их состояние.
-     */
     public function index(): array
     {
         $result = [];
@@ -46,33 +43,22 @@ class StarlineController
         return $result;
     }
 
-    /**
-     * Состояние конкретного устройства.
-     */
     public function state(int $deviceId): array
     {
-        $state = $this->starline->devices()->state($deviceId);
-
-        return $state->raw();
+        return $this->starline->devices()->state($deviceId)->raw();
     }
 
-    /**
-     * Команда устройству.
-     */
     public function command(int $deviceId, string $action): array
     {
         return match ($action) {
-            'arm'         => $this->starline->devices()->arm($deviceId),
-            'disarm'      => $this->starline->devices()->disarm($deviceId),
-            'start'       => $this->starline->devices()->startEngine($deviceId),
-            'stop'        => $this->starline->devices()->stopEngine($deviceId),
-            default       => throw new \InvalidArgumentException('Unknown action'),
+            'arm'   => $this->starline->devices()->arm($deviceId),
+            'disarm' => $this->starline->devices()->disarm($deviceId),
+            'start'  => $this->starline->devices()->startEngine($deviceId),
+            'stop'   => $this->starline->devices()->stopEngine($deviceId),
+            default  => throw new \InvalidArgumentException('Unknown action'),
         };
     }
 
-    /**
-     * События устройства за последние 7 дней.
-     */
     public function events(int $deviceId): array
     {
         try {

@@ -1,20 +1,20 @@
-<?php namespace StarlineApi\Tests;
+<?php namespace Cruide\StarlineLaravel\Tests;
 
+use Cruide\StarlineApi\Exceptions\StarlineApiException;
+use Cruide\StarlineApi\Exceptions\StarlineAuthException;
+use Cruide\StarlineApi\Exceptions\StarlineException;
 use Cruide\StarlineApi\Models\Device;
 use Cruide\StarlineApi\Models\DeviceState;
 use Cruide\StarlineApi\Models\UserInfo;
-use GuzzleHttp\Client;
+use Cruide\StarlineLaravel\Client;
+use Cruide\StarlineLaravel\StarlineServiceProvider;
+use Cruide\StarlineLaravel\Storage\CacheTokenStorage;
+use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use Orchestra\Testbench\TestCase;
-use Cruide\StarlineApi\Exceptions\StarlineApiException;
-use Cruide\StarlineApi\Exceptions\StarlineAuthException;
-use Cruide\StarlineApi\Exceptions\StarlineException;
-use StarlineApi\StarlineClient;
-use StarlineApi\StarlineServiceProvider;
-use StarlineApi\Storage\CacheTokenStorage;
 
 class StarlineClientTest extends TestCase
 {
@@ -31,14 +31,14 @@ class StarlineClientTest extends TestCase
         return [StarlineServiceProvider::class];
     }
 
-    private function client(array $responses, ?CacheTokenStorage $storage = null): StarlineClient
+    private function client(array $responses, ?CacheTokenStorage $storage = null): Client
     {
         $stack = HandlerStack::create(new MockHandler($responses));
         $stack->push(Middleware::history($this->history));
 
-        $httpClient = new Client(['handler' => $stack, 'http_errors' => false]);
+        $httpClient = new GuzzleClient(['handler' => $stack, 'http_errors' => false]);
 
-        return new StarlineClient(
+        return new Client(
             [
                 'app_id' => 123,
                 'app_secret' => 'secret',
@@ -194,7 +194,7 @@ class StarlineClientTest extends TestCase
     {
         $this->expectException(StarlineException::class);
 
-        new StarlineClient(
+        new Client(
             ['app_id' => '', 'app_secret' => '', 'login' => '', 'password' => ''],
             $this->storage(),
         );
@@ -369,7 +369,7 @@ class StarlineClientTest extends TestCase
     {
         $storage = $this->storage();
 
-        $client = new StarlineClient(
+        new Client(
             [
                 'app_id' => 123,
                 'app_secret' => 'secret',

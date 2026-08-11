@@ -1,22 +1,22 @@
-<?php namespace StarlineApi;
+<?php namespace Cruide\StarlineLaravel;
 
 use Cruide\StarlineApi\Api\DeviceApi;
 use Cruide\StarlineApi\Api\UserApi;
 use Cruide\StarlineApi\Auth\Authenticator;
 use Cruide\StarlineApi\Auth\OcrInterface;
-use Cruide\StarlineApi\StarlineApi as BaseStarlineApi;
-use GuzzleHttp\Client;
-use StarlineApi\Exceptions\StarlineException;
-use StarlineApi\Http\GuzzleHttpClient;
-use StarlineApi\Storage\CacheTokenStorage;
+use Cruide\StarlineApi\StarlineApi;
+use Cruide\StarlineLaravel\Exceptions\StarlineException;
+use Cruide\StarlineLaravel\Http\GuzzleHttpClient;
+use Cruide\StarlineLaravel\Storage\CacheTokenStorage;
+use GuzzleHttp\Client as GuzzleClient;
 
-class StarlineClient
+class Client
 {
-    private BaseStarlineApi $api;
+    private StarlineApi $api;
 
     private const REQUIRED_KEYS = ['app_id', 'app_secret', 'login', 'password'];
 
-    public function __construct(array $config, CacheTokenStorage $storage, ?Client $httpClient = null)
+    public function __construct(array $config, CacheTokenStorage $storage, ?GuzzleClient $httpClient = null)
     {
         foreach (self::REQUIRED_KEYS as $key) {
             if (empty($config[$key])) {
@@ -26,7 +26,7 @@ class StarlineClient
 
         $http = new GuzzleHttpClient((int) ($config['timeout'] ?? 30), $httpClient);
 
-        $this->api = new BaseStarlineApi(
+        $this->api = new StarlineApi(
             $config['app_id'],
             $config['app_secret'],
             $config['login'],
@@ -105,7 +105,7 @@ class StarlineClient
         return $this->api->request($method, $path, $query, $json);
     }
 
-    public function api(): BaseStarlineApi
+    public function api(): StarlineApi
     {
         return $this->api;
     }

@@ -40,10 +40,7 @@ App ID / Secret Key are issued at <https://my.starline.ru/developer>.
 ## Usage
 
 ```php
-use StarlineApi\Facades\Starline;
-use Cruide\StarlineApi\Models\Device;
-use Cruide\StarlineApi\Models\DeviceState;
-use Cruide\StarlineApi\Models\UserInfo;
+use Cruide\StarlineLaravel\Facades\Starline;
 
 // Profile + devices (typed DTOs)
 $info = Starline::user()->info();   // UserInfo
@@ -61,7 +58,6 @@ foreach ($devices as $device) {
     echo $state->batteryVoltage();       // V
     echo $state->latitude(), $state->longitude(); // GPS
     echo $state->mileage();              // km
-    echo $state->isEngineRunning() ? 'engine on' : 'engine off';
 }
 
 // Commands
@@ -84,11 +80,11 @@ Starline::post('/json/v1/device/'.$deviceId.'/set_param', ['security' => ['arm' 
 Or via dependency injection:
 
 ```php
-use StarlineApi\StarlineClient;
+use Cruide\StarlineLaravel\Client;
 
 class StarlineController
 {
-    public function __construct(private StarlineClient $starline)
+    public function __construct(private Client $starline)
     {
     }
 }
@@ -109,7 +105,7 @@ automatically. `md5`/`sha1` hashing is mandated by the StarLine protocol.
 
 ## API reference
 
-### Starline facade / StarlineClient
+### Facade / Client
 
 | Method | Description |
 |--------|-------------|

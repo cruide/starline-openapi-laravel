@@ -1,8 +1,8 @@
-<?php namespace StarlineApi;
+<?php namespace Cruide\StarlineLaravel;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
-use StarlineApi\Storage\CacheTokenStorage;
+use Cruide\StarlineLaravel\Storage\CacheTokenStorage;
 
 class StarlineServiceProvider extends ServiceProvider
 {
@@ -20,8 +20,8 @@ class StarlineServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(StarlineClient::class, function (Application $app): StarlineClient {
-            return new StarlineClient(
+        $this->app->singleton(Client::class, function (Application $app): Client {
+            return new Client(
                 (array) $app['config']['starline'],
                 $app->make(CacheTokenStorage::class),
             );

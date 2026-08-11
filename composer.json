@@ -1,5 +1,5 @@
 {
-    "name": "kengois/starline-api",
+    "name": "cruide/starline-openapi-laravel",
     "description": "Laravel client for the StarLine OpenAPI (SLID auth, device state & remote control)",
     "type": "library",
     "license": "MIT",
@@ -29,21 +29,21 @@
     },
     "autoload": {
         "psr-4": {
-            "StarlineApi\\": "src/"
+            "Cruide\\StarlineLaravel\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "StarlineApi\\Tests\\": "tests/"
+            "Cruide\\StarlineLaravel\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "StarlineApi\\StarlineServiceProvider"
+                "Cruide\\StarlineLaravel\\StarlineServiceProvider"
             ],
             "aliases": {
-                "Starline": "StarlineApi\\Facades\\Starline"
+                "Starline": "Cruide\\StarlineLaravel\\Facades\\Starline"
             }
         }
     },

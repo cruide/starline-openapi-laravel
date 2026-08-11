@@ -1,4 +1,4 @@
-<?php namespace StarlineApi\Storage;
+<?php namespace Cruide\StarlineLaravel\Storage;
 
 use Cruide\StarlineApi\Auth\TokenStorageInterface;
 use Illuminate\Contracts\Cache\Repository;

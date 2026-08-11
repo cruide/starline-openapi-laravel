@@ -1,4 +1,4 @@
-<?php namespace StarlineApi\Http;
+<?php namespace Cruide\StarlineLaravel\Http;
 
 use Cruide\StarlineApi\Exceptions\StarlineHttpException;
 use Cruide\StarlineApi\Http\HttpClientInterface;

@@ -1,7 +1,7 @@
-<?php namespace StarlineApi\Facades;
+<?php namespace Cruide\StarlineLaravel\Facades;
 
+use Cruide\StarlineLaravel\Client;
 use Illuminate\Support\Facades\Facade;
-use StarlineApi\StarlineClient;
 
 /**
  * @method static \Cruide\StarlineApi\Api\UserApi user()
@@ -19,12 +19,12 @@ use StarlineApi\StarlineClient;
  * @method static array request(string $method, string $path, array $query = [], ?array $json = null)
  * @method static \Cruide\StarlineApi\StarlineApi api()
  *
- * @see \StarlineApi\StarlineClient
+ * @see \Cruide\StarlineLaravel\Client
  */
 class Starline extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return StarlineClient::class;
+        return Client::class;
     }
 }

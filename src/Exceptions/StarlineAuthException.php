@@ -1,4 +1,4 @@
-<?php namespace StarlineApi\Exceptions;
+<?php namespace Cruide\StarlineLaravel\Exceptions;
 
 use Cruide\StarlineApi\Exceptions\StarlineAuthException as BaseException;
 

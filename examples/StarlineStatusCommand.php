@@ -10,8 +10,8 @@ namespace App\Console\Commands;
 
 use Cruide\StarlineApi\Exceptions\StarlineApiException;
 use Cruide\StarlineApi\Exceptions\StarlineAuthException;
+use Cruide\StarlineLaravel\Client;
 use Illuminate\Console\Command;
-use StarlineApi\StarlineClient;
 
 class StarlineStatusCommand extends Command
 {
@@ -21,7 +21,7 @@ class StarlineStatusCommand extends Command
 
     protected $description = 'Показать состояние устройств StarLine';
 
-    public function handle(StarlineClient $starline): int
+    public function handle(Client $starline): int
     {
         try {
             $devices = $starline->user()->devices();
